@@ -4,6 +4,34 @@ import java.util.*;
 
 public class Client
 {
+    private static class ClientThread implements Runnable
+    {
+        private BufferedReader in;
+
+        public ClientThread(BufferedReader in) throws IOException
+        {
+            this.in = in;
+        }
+
+        public void run()
+        {
+            try
+            {
+                String msgrecebida = null;
+                do
+                {
+                    msgrecebida = in.readLine();
+                    System.out.println(msgrecebida);
+
+                } while (msgrecebida != null || msgrecebida != "desconectar");
+            }
+            catch (IOException e) 
+            {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public static void leMenu(BufferedReader in) throws IOException
     {
         System.out.println(in.readLine());
@@ -64,22 +92,16 @@ public class Client
                                 {
                                     System.out.print("\nIniciando atendimento...\n");
 
+                                    ClientThread escutain = new ClientThread(in);
+                                    new Thread(escutain).start();
+
                                     String msgatendente = null;
-                                    String msgatendido = null;
                                     do
                                     {
-                                        // 1. pega input de E/S e joga na stream out
                                         msgatendente = scanner.nextLine();
                                         out.println(msgatendente);
-                                        
-                                        if (msgatendido != null)
-                                        {
-                                            // 5. captura msg da stream e joga no display
-                                            msgatendido = in.readLine();
-                                            System.out.println(msgatendido);
-                                        }
 
-                                    } while (msgatendido != "-d");
+                                    } while (msgatendente != null || msgatendente != "desconectar");
                                 }
                                 else 
                                 {
@@ -114,22 +136,8 @@ public class Client
                 case "n":
                     System.out.println(in.readLine());
 
-                    String msgatendente = null;
-                    String msgatendido = null;
-                    do
-                    {
-                        if (in.readLine() != null)
-                        {
-                            // 3. pega da stream in e joga em E/S
-                            msgatendente = in.readLine();
-                            System.out.println(msgatendente);
-
-                            // 4. pega resposta e joga na stream out
-                            msgatendido = scanner.nextLine();
-                            out.println(msgatendido);
-                        }
-
-                    } while (msgatendente != "-d");
+                    ClientThread escutainserver = new ClientThread(in);
+                    new Thread(escutainserver).start();
 
                     break;
                 // #endregion

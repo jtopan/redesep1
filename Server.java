@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.*;
 
 public class Server 
 {   
@@ -84,6 +85,42 @@ public class Server
             }
         }
 
+        private static class ServerThread implements Runnable
+        {
+            private Socket socket;
+            private BufferedReader in;
+            private String msg;
+
+            public ServerThread(Socket s) throws IOException
+            {
+                this.socket = s;
+                this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            }
+
+            public String getMsg()
+            {
+                return this.msg;
+            }
+
+            public void run()
+            {
+                try
+                {
+                    String msgrecebida = null;
+                    do
+                    {
+                        msgrecebida = in.readLine();
+                        this.msg = msgrecebida;
+
+                    } while (msgrecebida != null || msgrecebida != "desconectar");
+                }
+                catch (IOException e) 
+                {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         public void run()
         {
             PrintWriter out = null;
@@ -125,26 +162,22 @@ public class Server
                                 case "1":
                                     this.filaatendentes.add(socket);
 
+                                    Socket atendido = filaatendidos.remove();
+                                    PrintWriter out_atendido = new PrintWriter(atendido.getOutputStream(), true);
+
                                     out.println(filaatendidos.size());
 
                                     if (filaatendidos.size() != 0)
                                     {
-                                        Socket atendido = filaatendidos.remove();
-                                        PrintWriter out_atendido = new PrintWriter(atendido.getOutputStream(), true);
+                                        ServerThread escutain = new ServerThread(socket);
+                                        new Thread(escutain).start();
 
                                         String msgatendente = null;
-                    
-                                        // repassa a msg ao atendido e ouve pela resposta
                                         do
                                         {
-                                            msgatendente = in.readLine();
-                                            if (msgatendente != null)
-                                            {
-                                                // 2. pega da stream in e joga na stream out do atendido
-                                                out_atendido.println(msgatendente);
-                                            }
-            
-                                        } while (msgatendente != "-d");
+                                            msgatendente = escutain.getMsg();
+                                            out_atendido.println(msgatendente);
+                                        } while (msgatendente != null || msgatendente != "desconectar");
                                     }
                                     break;
 
@@ -166,20 +199,13 @@ public class Server
                     // #region ATENDIDO
                     case "n":
                         this.filaatendidos.add(socket);
+                        Scanner teste = new Scanner(System.in);
                         out.println("Aguarde enquanto achamos um atendente para você...");
 
-                        Socket atendente = filaatendentes.remove();
-                        PrintWriter out_atendente = new PrintWriter(atendente.getOutputStream(), true);
-
-                        String msgatendido = null;
-                        do
-                        {   
-                            // 5. pega da stream in e joga na stream out do atendente
-                            msgatendido = in.readLine();
-                            out_atendente.println(msgatendido);
-
-                        } while (msgatendido != "-d");
-
+                        while (teste.nextLine() != "x")
+                        {
+                            System.out.println("ok");
+                        }
                         break;
                     // #endregion
 
